@@ -7,6 +7,23 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: pgvector/pgvector:pg16
+        env:
+          POSTGRES_DB: docmind
+          POSTGRES_USER: docmind
+          POSTGRES_PASSWORD: docmind
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U docmind -d docmind"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      DATABASE_URL: postgresql+asyncpg://docmind:docmind@localhost:5432/docmind
+      EMBEDDING_DIMENSIONS: "256"
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -14,5 +31,6 @@ jobs:
           python-version: "3.12"
       - run: python -m pip install --upgrade pip
       - run: pip install ".[dev]"
+      - run: alembic upgrade head
       - run: ruff check .
       - run: pytest -q
